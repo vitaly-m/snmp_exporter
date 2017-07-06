@@ -1,0 +1,91 @@
+kind: Template
+apiVersion: v1
+metadata:
+  name: snmp-exporter
+  annotations:
+    description: Prometheus SNMP exporter service
+objects:
+  - kind: DeploymentConfig
+    apiVersion: v1
+    metadata:
+      name: ${SERVICE_NAME}
+      labels:
+        app: ${SERVICE_NAME}
+    spec:
+      strategy:
+        type: Recreate
+        reacreateParams:
+          timeoutSeconds: 600
+      triggers:
+        - type: ConfigChange
+      replicas: 1
+      selector:
+        app: ${SERVICE_NAME}
+        deploymentconfig: ${SERVICE_NAME}
+      template:
+        metadata:
+          labels:
+            app: ${SERVICE_NAME}
+            deploymentconfig: ${SERVICE_NAME}
+            name: ${SERVICE_NAME}
+        spec:
+          containers:
+            - name: ${SERVICE_NAME}
+              image: ${DOCKER_TAG}
+              env:
+                - name: CONFIG_FILE
+                  value: '${CONFIG_DIR}/snmp_exporter/${DOMAIN}.yml'
+              ports:
+                - containerPort: 9116
+                  name: http
+                  protocol: TCP
+              resources:
+                requests:
+                  memory: ${MEMORY_REQUEST}
+                  cpu: ${CPU_REQUEST}
+                limits:
+                  memory: ${MEMORY_LIMIT}
+                  cpu: ${CPU_LIMIT}
+              volumeMounts:
+                - mountPath: ${CONFIG_DIR}
+                  name: config
+          volumes:
+            - name: config
+              persistentVolumeClaim:
+                claimName: ${CLAIM_NAME}
+parameters:
+- name: SERVICE_NAME
+  description: Deployment Config/Service name.
+  value: 'snmp-exporter'
+  required: true
+- name: DOCKER_TAG
+  description: Image name.
+  required: true
+- name: CONFIG_DIR
+  description: Configuration directory root. Must be the same for all exporters, prometheus and monitoring console.
+  value: '/config'
+  required: true
+- name: DOMAIN
+  description: The domain for the exporter.
+  value: 'default'
+  required: true
+- name: MEMORY_REQUEST
+  description: Maximum amount of memory the container can use. Value can be specified with SI suffices (E, P, T, G, M, K, m) or their power-of-two-equivalents (Ei, Pi, Ti, Gi, Mi, Ki)
+  value: '80Mi'
+  required: true
+- name: CPU_REQUEST
+  description: Maximum amount of CPU the container can use
+  value: '200m'
+  required: true
+- name: MEMORY_LIMIT
+  description: Maximum amount of memory the container can use. Value can be specified with SI suffices (E, P, T, G, M, K, m) or their power-of-two-equivalents (Ei, Pi, Ti, Gi, Mi, Ki)
+  value: '100Mi'
+  required: true
+- name: CPU_LIMIT
+  description: Maximum amount of CPU the container can use
+  value: '200m'
+  required: true
+- name: CLAIM_NAME
+  description: Claim name
+  value: 'rwx-claim'
+  required: true
