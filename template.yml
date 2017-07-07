@@ -32,9 +32,8 @@ objects:
           containers:
             - name: ${SERVICE_NAME}
               image: ${DOCKER_TAG}
-              env:
-                - name: CONFIG_FILE
-                  value: '/config/snmp_exporter/${DOMAIN}.yml'
+              args:
+                - '-config.file=/config/snmp_exporter/${DOMAIN}.yml'
               ports:
                 - containerPort: 9116
                   name: http

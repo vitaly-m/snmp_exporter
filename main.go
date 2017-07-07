@@ -130,14 +130,9 @@ func main() {
 
 	log.Infoln("Starting snmp exporter", version.Info())
 	log.Infoln("Build context", version.BuildContext())
-	log.Infoln("CONFIG_FILE", os.Getenv("CONFIG_FILE"))
 	// Bail early if the config is bad.
 	var err error
-	if os.Getenv("CONFIG_FILE") != "" {
-		sc.C, err = config.LoadFile(os.Getenv("CONFIG_FILE"))
-	} else {
-		sc.C, err = config.LoadFile(*configFile)
-	}
+	sc.C, err = config.LoadFile(*configFile)
 	if err != nil {
 		log.Fatalf("Error parsing config file: %s", err)
 	}
