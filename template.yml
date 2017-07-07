@@ -34,7 +34,7 @@ objects:
               image: ${DOCKER_TAG}
               env:
                 - name: CONFIG_FILE
-                  value: '${CONFIG_DIR}/snmp_exporter/${DOMAIN}.yml'
+                  value: '/config/snmp_exporter/${DOMAIN}.yml'
               ports:
                 - containerPort: 9116
                   name: http
@@ -47,12 +47,41 @@ objects:
                   memory: ${MEMORY_LIMIT}
                   cpu: ${CPU_LIMIT}
               volumeMounts:
-                - mountPath: ${CONFIG_DIR}
+                - mountPath: /config
                   name: config
           volumes:
             - name: config
               persistentVolumeClaim:
                 claimName: ${CLAIM_NAME}
+  - kind: Service
+    apiVersion: v1
+    metadata:
+      name: ${SERVICE_NAME}
+      labels:
+        app: ${SERVICE_NAME}
+    spec:
+      ports:
+        - name: http
+          protocol: TCP
+          port: 9116
+          targetPort: 9116
+      selector:
+        app: ${SERVICE_NAME}
+        deploymentconfig: ${SERVICE_NAME}
+      type: NodePort
+      sessionAffinity: None
+      status:
+        loadBalancer:
+  - kind: Route
+    apiVersion: v1
+    metadata:
+      name: ${SERVICE_NAME}-http
+    spec:
+      to:
+        kind: Service
+        name: ${SERVICE_NAME}
+      port:
+        targetPort: http
 parameters:
 - name: SERVICE_NAME
   description: Deployment Config/Service name.
@@ -60,10 +89,6 @@ parameters:
   required: true
 - name: DOCKER_TAG
   description: Image name.
-  required: true
-- name: CONFIG_DIR
-  description: Configuration directory root. Must be the same for all exporters, prometheus and monitoring console.
-  value: '/config'
   required: true
 - name: DOMAIN
   description: The domain for the exporter.
